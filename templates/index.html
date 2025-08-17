@@ -1,27 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Thinkbot</title>
+    <title>DataSavant</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="static/style.css">
 </head>
 <body>
     <div class="container mt-5">
+            <div class="header-container">
+            <h1 class="header-title">DataSavant - Your Expert Assistant</h1>
+            <img src="{{ url_for('static', filename='chatbot.png') }}" alt="Chatbot Tierno" class="chatbot-img">
+          </div>
+
         <div id="chat-container" class="chat-container"></div>
-        <div class="row">
-            <div class="col">
-                <div>
+        <div class="row mt-3">
+            <div class="col-md-4">
                     <select class="form-control" id="function-select">
                         <option value="answer">Answer as Chatbot</option>
+                        <option value="kbanswer">Answer from Knowledgebase</option>
+                        <option value="search">Search Knowledgebase</option>
+                        
                     </select>
-                </div>
+                
             </div>
-            <div class="col">
-                <div class="input-group-append">
-                    <input type="text" id="message-input" placeholder="Type your message here...">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input -type="text" id="message-input" placeholder="Type your message here...">
                     <button id="send-btn" class="btn btn-primary">Send</button>
                 </div>
             </div>
+        </div>
+
+             <!-- Clear Button -->
+        <div class="text-center mt-3">
+            <button id="clear-chat-btn" class="btn btn-danger">Clear Chat</button>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>

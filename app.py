@@ -1,39 +1,108 @@
 from flask import Flask, render_template
 from flask import request, jsonify, abort
-
+import os
 from langchain.llms import Cohere
+from langchain.chains import LLMChain, RetrievalQA
+from langchain.memory import ConversationBufferMemory
+from langchain.embeddings import CohereEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.prompts import ChatPromptTemplate
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
+def load_db():
+    try:
+        print("Loading DB...")
+        embeddings = CohereEmbeddings(cohere_api_key=os.environ["COHERE_API_KEY"])
+        
+        print("Embeddings loaded... ")
+        vectordb = Chroma(persist_directory='db', embedding_function=embeddings)
+        print("DB loaded... ")
+        qa = RetrievalQA.from_chain_type(
+            llm=Cohere(),
+            chain_type="refine",
+            retriever=vectordb.as_retriever(),
+            return_source_documents=True
+        )
+        print ("QA loaded... ")
+        return qa
+    except Exception as e:
+        print("Error::", e)
+
+
+qa = load_db()
+
 def answer_from_knowledgebase(message):
-    # TODO: Write your code here
-    return ""
+    if qa is None:
+        return "Sorry, the knowledge base is not available at the moment. Please try again later."
+    try:
+        res = qa({"query": message})
+    except Exception as e:
+        print(f"Error in answer_from_knowledgebase: {e}")
+        return "An error occurred while processing your request. Please try again."
+    return res['result']
+
 
 def search_knowledgebase(message):
-    # TODO: Write your code here
-    sources = ""
-    return sources
+    if qa is None:
+        return "Sorry, the knowledge base is not available at the moment. Please try again later."
+    try:
+        res = qa({"query": message})
+        sources = ""
+        for count, source in enumerate(res['source_documents'],1):
+            # sources += "Source " + str(count) + "\n"
+            # sources += source.page_content + "\n"
+            sources += f"<b> Source {count}\n </b>"
+            sources += f"{source.page_content}\n"
+        return sources
+    except Exception as e:
+        print(f"Error in search_knowledgebase: {e}")
+        return "An error occurred while processing your request. Please try again."
 
 def answer_as_chatbot(message):
-    # TODO: Write your code here
-    return ""
+    try:
+        cohere_api_key = os.getenv("COHERE_API_KEY")
+        if not cohere_api_key:
+            raise ValueError("COHERE_API_KEY environment variable not set")
+    
+        llm = Cohere(cohere_api_key=cohere_api_key, temperature=0.7)
+
+        template = """You are a helpful AI assistant. Your goal is to provide informative and engaging responses to user queries.
+
+        Current conversation:
+        {chat_history}
+
+        Human: {human_input}
+        AI Assistant:"""
+
+        prompt = ChatPromptTemplate.from_template(template)
+        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        conversation_chain = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            memory=memory
+        )
+
+        response = conversation_chain.predict(human_input=message)
+        return response
+    except Exception as e:
+        print(f"Error in answer_as_chatbot: {e}")
+        return "An error occurred while processing your request. Please try again."
+
 
 @app.route('/kbanswer', methods=['POST'])
 def kbanswer():
-    # TODO: Write your code here
-    
-    # call answer_from_knowledebase(message)
-        
-    # Return the response as JSON
-    return 
+    message = request.json['message']
+    response_message = answer_from_knowledgebase(message)
+    return jsonify({'message': response_message}), 200
+
 
 @app.route('/search', methods=['POST'])
 def search():    
-    # Search the knowledgebase and generate a response
-    # (call search_knowledgebase())
-    
-    # Return the response as JSON
-    return
+    message = request.json['message']
+    search_results = search_knowledgebase(message).replace("\n", "<br>")
+    return jsonify({'message': search_results}), 200
 
 @app.route('/answer', methods=['POST'])
 def answer():

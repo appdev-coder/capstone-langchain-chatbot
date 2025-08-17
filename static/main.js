@@ -80,3 +80,9 @@ function displayMessage(sender, message) {
 // Handle button click event
 let sendButton = document.getElementById('send-btn');
 sendButton.addEventListener('click', sendMessage);
+
+// Clear chat history when clicked
+let clearButton = document.getElementById('clear-chat-btn');
+clearButton.addEventListener('click', function() {
+    document.getElementById('chat-container').innerHTML = '';
+});
